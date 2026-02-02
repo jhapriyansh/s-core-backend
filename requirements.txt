@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+python-multipart
+pdfplumber
+pytesseract
+pillow
+chromadb
+sentence-transformers
+groq
+python-dotenv
+duckduckgo-search
+
