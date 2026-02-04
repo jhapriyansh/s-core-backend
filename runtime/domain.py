@@ -5,7 +5,7 @@ Detects when queries fall outside syllabus scope.
 Handles topic drift gracefully.
 """
 
-from typing import Tuple
+from typing import Tuple, List
 
 from ingestion.embed import embed, cosine_similarity
 from groq import Groq
@@ -16,20 +16,23 @@ from config import get_groq_key, GROQ_MODEL
 # ─────────────────────────────────────────────────────────────
 
 # Minimum similarity to syllabus for query to be "in scope"
-DOMAIN_THRESHOLD = 0.35
+DOMAIN_THRESHOLD = 0.30  # Lowered from 0.35 for better recall
+
+# Minimum similarity to any individual topic
+TOPIC_THRESHOLD = 0.40
 
 # ─────────────────────────────────────────────────────────────
 # Domain Check Functions
 # ─────────────────────────────────────────────────────────────
 
-def domain_guard(query: str, syllabus: str, embed_fn=None) -> bool:
+def domain_guard(query: str, syllabus: str, syllabus_topics: List[str] = None) -> bool:
     """
     Check if query is within syllabus scope.
     
     Args:
         query: User's query
         syllabus: Syllabus text
-        embed_fn: Embedding function (deprecated, uses internal)
+        syllabus_topics: List of individual syllabus topics
         
     Returns:
         True if query is in scope, False otherwise
@@ -39,12 +42,20 @@ def domain_guard(query: str, syllabus: str, embed_fn=None) -> bool:
     
     similarity = cosine_similarity(query_vec, syllabus_vec)
     
+    # Check against individual topics for better accuracy
+    if syllabus_topics:
+        for topic in syllabus_topics:
+            topic_vec = embed(topic)
+            topic_sim = cosine_similarity(query_vec, topic_vec)
+            if topic_sim >= TOPIC_THRESHOLD:
+                return True  # Matches a specific topic
+    
     return similarity >= DOMAIN_THRESHOLD
 
 def domain_guard_detailed(
     query: str,
     syllabus: str,
-    syllabus_topics: list = None
+    syllabus_topics: List[str] = None
 ) -> Tuple[bool, float, str]:
     """
     Detailed domain check with explanation.
@@ -55,26 +66,34 @@ def domain_guard_detailed(
     query_vec = embed(query)
     syllabus_vec = embed(syllabus)
     
-    similarity = cosine_similarity(query_vec, syllabus_vec)
+    syllabus_similarity = cosine_similarity(query_vec, syllabus_vec)
     
-    # Also check against individual topics if available
-    topic_match = None
+    # Check against individual topics for better accuracy
+    best_topic_match = None
+    best_topic_score = 0.0
+    
     if syllabus_topics:
-        best_match = 0
         for topic in syllabus_topics:
             topic_vec = embed(topic)
             topic_sim = cosine_similarity(query_vec, topic_vec)
-            if topic_sim > best_match:
-                best_match = topic_sim
-                topic_match = topic
+            if topic_sim > best_topic_score:
+                best_topic_score = topic_sim
+                best_topic_match = topic
     
-    if similarity >= DOMAIN_THRESHOLD:
+    # Use the higher of syllabus similarity or best topic match
+    effective_similarity = max(syllabus_similarity, best_topic_score)
+    
+    # Determine if in scope using either threshold
+    is_in_scope = (syllabus_similarity >= DOMAIN_THRESHOLD or 
+                   best_topic_score >= TOPIC_THRESHOLD)
+    
+    if is_in_scope:
         explanation = f"Query is within syllabus scope."
-        if topic_match:
-            explanation += f" Most relevant topic: {topic_match}"
-        return True, similarity, explanation
+        if best_topic_match:
+            explanation += f" Most relevant topic: {best_topic_match}"
+        return True, effective_similarity, explanation
     else:
-        return False, similarity, "This topic is not in the scope of your current syllabus."
+        return False, effective_similarity, "This topic is not in the scope of your current syllabus."
 
 def generate_out_of_scope_response(query: str, syllabus: str) -> str:
     """

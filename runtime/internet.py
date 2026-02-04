@@ -12,7 +12,7 @@ Key principle: Internet = temporary oracle, Chroma = ground truth
 from typing import Optional, List
 from dataclasses import dataclass
 
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 from groq import Groq
 from config import get_groq_key, GROQ_MODEL, WHITELIST_DOMAINS
 
@@ -39,18 +39,18 @@ def search_internet(query: str, max_results: int = 10) -> List[dict]:
     results = []
     
     try:
-        with DDGS() as ddgs:
-            for r in ddgs.text(query, max_results=max_results):
-                # Filter to whitelisted domains
-                for domain in WHITELIST_DOMAINS:
-                    if domain in r.get("href", ""):
-                        results.append({
-                            "title": r.get("title", ""),
-                            "body": r.get("body", ""),
-                            "url": r.get("href", ""),
-                            "domain": domain
-                        })
-                        break
+        ddgs = DDGS()
+        for r in ddgs.text(query, max_results=max_results):
+            # Filter to whitelisted domains
+            for domain in WHITELIST_DOMAINS:
+                if domain in r.get("href", ""):
+                    results.append({
+                        "title": r.get("title", ""),
+                        "body": r.get("body", ""),
+                        "url": r.get("href", ""),
+                        "domain": domain
+                    })
+                    break
     except Exception as e:
         print(f"Internet search failed: {e}")
     

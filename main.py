@@ -739,11 +739,12 @@ async def chat(
     
     # Retrieve relevant content
     syllabus = deck.get("syllabus", "")
+    syllabus_topics = deck.get("syllabus_topics", [])
     retrieval = retrieve(user_id, deck_id, user_input, pace)
     context = "\n\n".join(retrieval.documents) if retrieval.documents else ""
     
-    # Check domain and coverage
-    in_scope, similarity, explanation = domain_guard_detailed(user_input, syllabus)
+    # Check domain and coverage (pass syllabus_topics for accurate matching)
+    in_scope, similarity, explanation = domain_guard_detailed(user_input, syllabus, syllabus_topics)
     
     if not in_scope:
         # Out of scope
@@ -772,7 +773,7 @@ async def chat(
     
     return ChatResponse(
         message=answer,
-        topic=domain_result.matched_topic,
+        topic=None,  # Topic matching done separately if needed
         mode=session.mode.value,
         awaiting_input=False,
         prompt=None,
