@@ -107,7 +107,8 @@ def merge_streams(
 def filter_by_syllabus(
     chunks: List[Chunk],
     syllabus: str,
-    source_file: str
+    source_file: str,
+    syllabus_topics: List[str] = None
 ) -> Tuple[List[MappedChunk], int]:
     """
     Filter chunks by syllabus.
@@ -115,7 +116,10 @@ def filter_by_syllabus(
     """
     chunk_texts = [c.content for c in chunks]
     
-    mapped = map_to_syllabus(chunk_texts, syllabus, source_file)
+    mapped = map_to_syllabus(
+        chunk_texts, syllabus, source_file,
+        syllabus_topics=syllabus_topics
+    )
     filtered_count = len(chunks) - len(mapped)
     
     return mapped, filtered_count
@@ -168,7 +172,8 @@ def ingest_single_file(
     filename: str,
     syllabus: str,
     user_id: str,
-    deck_id: str
+    deck_id: str,
+    syllabus_topics: List[str] = None
 ) -> IngestionResult:
     """
     Ingest a single file through the full pipeline.
@@ -187,9 +192,10 @@ def ingest_single_file(
             filename
         )
         
-        # Phase E: Syllabus filter
+        # Phase E: Syllabus filter (pass pre-parsed topics to avoid re-parsing)
         mapped_chunks, filtered_count = filter_by_syllabus(
-            chunks, syllabus, filename
+            chunks, syllabus, filename,
+            syllabus_topics=syllabus_topics
         )
         
         # Phase F: Embed and store
@@ -275,7 +281,8 @@ def ingest_files(
             filename=filename,
             syllabus=syllabus,
             user_id=user_id,
-            deck_id=deck_id
+            deck_id=deck_id,
+            syllabus_topics=syllabus_topics
         )
         
         results.append(result)

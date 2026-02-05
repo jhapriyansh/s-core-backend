@@ -102,7 +102,7 @@ OUTPUT FORMAT:
         res = client.chat.completions.create(
             model=GROQ_MODEL,
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.5,
+            temperature=0.3,
             max_tokens=3000
         )
         return res.choices[0].message.content
@@ -238,7 +238,7 @@ Respond appropriately to the student's question:"""
         res = client.chat.completions.create(
             model=GROQ_MODEL,
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.6,
+            temperature=0.3,
             max_tokens=2500
         )
         return res.choices[0].message.content

@@ -83,7 +83,11 @@ Now go DEEPER. Add more details, edge cases, advanced concepts, and nuances.""",
 ---
 {previous_explanation[:1000] if previous_explanation else 'N/A'}
 ---
-Now explain it SIMPLER. Use easier words, more analogies, break it into smaller pieces.""",
+IMPORTANT: Rephrase the EXACT SAME content from above in simpler words.
+Do NOT add new topics, new algorithms, or new concepts.
+Do NOT expand scope beyond what was already covered.
+Use easier vocabulary, more analogies, and break it into smaller pieces.
+Stay strictly within the same sub-topics.""",
         "example": f"""The student wants MORE EXAMPLES. Previous explanation:
 ---
 {previous_explanation[:500] if previous_explanation else 'N/A'}
@@ -110,15 +114,18 @@ INSTRUCTIONS:
 
 1. Teach ONLY this topic: "{topic}"
 2. Use ONLY information from the study material
-3. Structure your lesson clearly with headers
-4. Include relevant formulas if applicable
-5. End with a brief summary of key points
+3. Do NOT invent numbers, values, or data that are not in the study material
+4. If examples use numbers (e.g. burst times, arrival times), copy them EXACTLY from the material
+5. Keep your response under 300 words — focus on ONE key concept at a time
+6. Structure your lesson clearly with headers
+7. Use markdown tables if comparing items (algorithms, properties, etc.)
+8. End with a brief summary of key points
 
 FORMAT:
 📖 LESSON: {topic}
 ================================
 
-[Your explanation here]
+[Your explanation here — concise, one sub-concept at a time]
 
 📌 KEY TAKEAWAYS:
 • Point 1
@@ -130,8 +137,8 @@ Generate the lesson now:"""
     response = client.chat.completions.create(
         model=GROQ_MODEL,
         messages=[{"role": "user", "content": prompt}],
-        temperature=0.7,
-        max_tokens=2000
+        temperature=0.3,
+        max_tokens=1500
     )
     
     return response.choices[0].message.content
@@ -147,6 +154,7 @@ STUDY MATERIAL:
 {context}
 
 Provide 2-3 detailed examples that illustrate this topic.
+Use ONLY data and values from the study material — do NOT invent numbers.
 For each example:
 1. State the problem/scenario clearly
 2. Show step-by-step solution
@@ -174,7 +182,7 @@ Generate examples now:"""
     response = client.chat.completions.create(
         model=GROQ_MODEL,
         messages=[{"role": "user", "content": prompt}],
-        temperature=0.7,
+        temperature=0.3,
         max_tokens=1500
     )
     
@@ -524,7 +532,7 @@ Answer:"""
     response = client.chat.completions.create(
         model=GROQ_MODEL,
         messages=[{"role": "user", "content": prompt}],
-        temperature=0.7,
+        temperature=0.3,
         max_tokens=1000
     )
     

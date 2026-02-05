@@ -36,12 +36,13 @@ def close_mongo():
 # User Operations
 # ─────────────────────────────────────────────────────────────
 
-def create_user(username: str, email: str) -> str:
+def create_user(username: str, email: str, password_hash: str = "") -> str:
     """Create a new user and return user_id"""
     db = get_mongo()
     user = {
         "username": username,
         "email": email,
+        "password_hash": password_hash,
         "created_at": datetime.utcnow(),
         "decks": []
     }
@@ -60,6 +61,14 @@ def get_user_by_username(username: str) -> Optional[dict]:
     """Get user by username"""
     db = get_mongo()
     user = db.users.find_one({"username": username})
+    if user:
+        user["_id"] = str(user["_id"])
+    return user
+
+def get_user_by_email(email: str) -> Optional[dict]:
+    """Get user by email"""
+    db = get_mongo()
+    user = db.users.find_one({"email": email})
     if user:
         user["_id"] = str(user["_id"])
     return user

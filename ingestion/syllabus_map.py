@@ -41,8 +41,14 @@ def parse_syllabus(syllabus: str) -> List[str]:
 Syllabus:
 {syllabus}
 
+IMPORTANT RULES:
+1. If the syllabus is vague or just a broad topic name (e.g. "Scheduling", "Memory Management"),
+   expand it into the common academic sub-topics a university course would cover.
+   For example "Scheduling" → ["CPU Scheduling Overview", "First Come First Served (FCFS)", "Shortest Job First (SJF)", "Priority Scheduling", "Round Robin (RR)", "Multilevel Queue Scheduling", "Multilevel Feedback Queue"]
+2. If the syllabus already lists specific topics, parse them as-is with their subtopics.
+3. Return at least 3 topics — never return a single-element list for a broad subject.
+
 Return as a JSON array of topic strings.
-Include main topics and their subtopics.
 Example: ["Topic 1", "Topic 1 - Subtopic A", "Topic 2", ...]
 
 Return ONLY the JSON array, no other text.
@@ -144,7 +150,8 @@ def map_to_syllabus(
     chunks: List[str],
     syllabus: str,
     source_file: str = "unknown",
-    min_relevance: float = 0.3
+    min_relevance: float = 0.3,
+    syllabus_topics: Optional[List[str]] = None
 ) -> List[MappedChunk]:
     """
     Map all chunks to syllabus topics.
@@ -158,12 +165,14 @@ def map_to_syllabus(
         syllabus: Raw syllabus text
         source_file: Source filename for metadata
         min_relevance: Minimum relevance score to keep chunk
+        syllabus_topics: Pre-parsed topics (avoids redundant LLM call)
         
     Returns:
         List of MappedChunk objects that passed the filter
     """
-    # Parse syllabus into topics
-    syllabus_topics = parse_syllabus(syllabus)
+    # Use pre-parsed topics if available, otherwise parse now
+    if not syllabus_topics:
+        syllabus_topics = parse_syllabus(syllabus)
     
     if not syllabus_topics:
         print("Warning: Could not parse syllabus topics")
@@ -230,10 +239,10 @@ def analyze_topic_coverage(
 # Simple Interface (backward compatibility)
 # ─────────────────────────────────────────────────────────────
 
-def filter_by_syllabus(text: str, syllabus: str) -> Optional[str]:
+def filter_by_syllabus(text: str, syllabus: str, syllabus_topics: Optional[List[str]] = None) -> Optional[str]:
     """
     Simple interface: check if text is relevant to syllabus.
     Returns the text if relevant, None if not.
     """
-    mapped = map_to_syllabus([text], syllabus)
+    mapped = map_to_syllabus([text], syllabus, syllabus_topics=syllabus_topics)
     return mapped[0].content if mapped else None

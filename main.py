@@ -21,9 +21,15 @@ import uvicorn
 # Database imports
 from db.mongo import (
     init_db, create_user, get_user, get_user_by_username,
+    get_user_by_email,
     create_deck, get_deck, get_user_decks, delete_deck, log_query
 )
 from db.chroma import get_collection_stats, delete_collection
+
+# Auth imports
+from auth import (
+    hash_password, verify_password, create_access_token, get_current_user
+)
 
 # Ingestion imports
 from ingestion.pipeline import ingest_files, PipelineResult
@@ -74,11 +80,22 @@ app.add_middleware(
 class UserCreate(BaseModel):
     username: str
     email: str
+    password: str
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
 
 class UserResponse(BaseModel):
     user_id: str
     username: str
     email: str
+
+class AuthResponse(BaseModel):
+    user_id: str
+    username: str
+    email: str
+    token: str
 
 class DeckCreate(BaseModel):
     name: str
@@ -177,20 +194,57 @@ async def health():
 # User Endpoints
 # ─────────────────────────────────────────────────────────────
 
-@app.post("/users", response_model=UserResponse)
+@app.post("/users", response_model=AuthResponse)
 async def create_new_user(user: UserCreate):
-    """Create a new user"""
+    """Register a new user with email + password"""
     try:
-        # Check if user exists
+        # Check if username exists
         existing = get_user_by_username(user.username)
         if existing:
             raise HTTPException(400, "Username already exists")
-        
-        user_id = create_user(user.username, user.email)
-        return UserResponse(
+
+        # Check if email exists
+        existing_email = get_user_by_email(user.email)
+        if existing_email:
+            raise HTTPException(400, "Email already registered")
+
+        # Hash password and create user
+        hashed = hash_password(user.password)
+        user_id = create_user(user.username, user.email, hashed)
+
+        # Generate JWT token
+        token = create_access_token(user_id, user.username, user.email)
+
+        return AuthResponse(
             user_id=user_id,
             username=user.username,
-            email=user.email
+            email=user.email,
+            token=token,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+@app.post("/users/login", response_model=AuthResponse)
+async def login_user(credentials: UserLogin):
+    """Login with email + password, returns JWT token"""
+    try:
+        user = get_user_by_email(credentials.email)
+        if not user:
+            raise HTTPException(401, "Invalid email or password")
+
+        if not verify_password(credentials.password, user.get("password_hash", "")):
+            raise HTTPException(401, "Invalid email or password")
+
+        user_id = str(user["_id"])
+        token = create_access_token(user_id, user["username"], user["email"])
+
+        return AuthResponse(
+            user_id=user_id,
+            username=user["username"],
+            email=user["email"],
+            token=token,
         )
     except HTTPException:
         raise

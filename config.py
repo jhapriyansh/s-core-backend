@@ -14,6 +14,14 @@ def get_groq_key():
     return key
 
 # ─────────────────────────────────────────────────────────────
+# JWT / Auth Configuration
+# ─────────────────────────────────────────────────────────────
+
+JWT_SECRET = os.getenv("JWT_SECRET", "s-core-super-secret-key-change-in-production")
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRY_HOURS = int(os.getenv("JWT_EXPIRY_HOURS", "72"))
+
+# ─────────────────────────────────────────────────────────────
 # MongoDB Configuration
 # ─────────────────────────────────────────────────────────────
 
