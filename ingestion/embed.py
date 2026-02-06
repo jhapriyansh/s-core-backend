@@ -3,7 +3,12 @@ Embedding Module for S-Core
 Converts text to semantic vectors using sentence transformers.
 """
 
+import warnings
 from typing import List, Union
+
+# Suppress harmless position_ids warning from newer transformers
+warnings.filterwarnings("ignore", message=".*position_ids.*")
+
 from sentence_transformers import SentenceTransformer
 
 from config import EMBEDDING_MODEL
@@ -38,7 +43,7 @@ def embed(text: str) -> List[float]:
         Embedding as list of floats
     """
     model = get_model()
-    return model.encode(text).tolist()
+    return model.encode(text, normalize_embeddings=True).tolist()
 
 def embed_batch(texts: List[str], batch_size: int = 32) -> List[List[float]]:
     """
@@ -52,7 +57,12 @@ def embed_batch(texts: List[str], batch_size: int = 32) -> List[List[float]]:
         List of embeddings
     """
     model = get_model()
-    embeddings = model.encode(texts, batch_size=batch_size, show_progress_bar=True)
+    embeddings = model.encode(
+        texts,
+        batch_size=batch_size,
+        show_progress_bar=False,
+        normalize_embeddings=True,
+    )
     return [e.tolist() for e in embeddings]
 
 def embed_query(query: str) -> List[float]:

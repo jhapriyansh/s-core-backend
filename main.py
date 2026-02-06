@@ -12,11 +12,13 @@ It enforces syllabus boundaries, diagnoses missing knowledge,
 adapts learning depth, and generates theory + practice content.
 """
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, Form
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List, Optional
+from typing import List, Optional, Dict
 from pydantic import BaseModel
 import uvicorn
+import os
+import shutil
 
 # Database imports
 from db.mongo import (
@@ -34,6 +36,9 @@ from auth import (
 # Ingestion imports
 from ingestion.pipeline import ingest_files, PipelineResult
 from ingestion.embed import embed, embed_query
+
+# ─── Background ingestion tracking ───
+_ingestion_status: Dict[str, dict] = {}
 
 # Runtime imports
 from runtime.classify import classify, classify_detailed
@@ -344,21 +349,15 @@ async def remove_deck(user_id: str, deck_id: str):
 async def upload_files(
     user_id: str,
     deck_id: str,
-    files: List[UploadFile] = File(...)
+    files: List[UploadFile] = File(...),
+    background_tasks: BackgroundTasks = None,
 ):
     """
     Upload and ingest files into a deck.
     
-    Supported formats:
-    - PDF, DOC/DOCX, PPT/PPTX, TXT
-    - Images (PNG, JPG, JPEG) - for scanned notes
-    
-    Files are processed through the unified ingestion pipeline:
-    1. Extract text and images
-    2. Convert images to text (OCR + LLM)
-    3. Merge streams
-    4. Filter by syllabus (hard boundary)
-    5. Embed and store
+    Files are saved to a temp directory and processed in the background.
+    Returns immediately so the user doesn't have to wait.
+    Use GET /users/{user_id}/decks/{deck_id}/ingestion-status to poll progress.
     """
     # Verify deck exists and belongs to user
     deck = get_deck(deck_id)
@@ -371,31 +370,90 @@ async def upload_files(
     if not syllabus:
         raise HTTPException(400, "Deck has no syllabus defined")
     
-    # Run ingestion pipeline
-    result: PipelineResult = ingest_files(
-        files=files,
-        syllabus=syllabus,
-        user_id=user_id,
-        deck_id=deck_id
+    # Save files to temp directory (must read before returning response)
+    temp_dir = f"/tmp/score_{deck_id}"
+    os.makedirs(temp_dir, exist_ok=True)
+    saved_files = []
+    for f in files:
+        temp_path = os.path.join(temp_dir, f.filename)
+        with open(temp_path, "wb") as buffer:
+            shutil.copyfileobj(f.file, buffer)
+        saved_files.append((temp_path, f.filename))
+    
+    # Track status
+    status_key = f"{user_id}_{deck_id}"
+    _ingestion_status[status_key] = {
+        "status": "processing",
+        "files": [f.filename for f in files],
+        "files_total": len(files),
+        "files_done": 0,
+    }
+    
+    # Run ingestion in background
+    background_tasks.add_task(
+        _run_ingestion_background,
+        saved_files, syllabus, user_id, deck_id, status_key, temp_dir
     )
     
     return {
-        "status": "success",
-        "files_processed": result.files_processed,
-        "total_chunks": result.total_chunks,
-        "total_filtered": result.total_filtered,
-        "syllabus_topics": result.syllabus_topics,
-        "details": [
-            {
-                "filename": r.filename,
-                "success": r.success,
-                "chunks": r.chunks_created,
-                "filtered": r.chunks_filtered,
-                "error": r.error
-            }
-            for r in result.results
-        ]
+        "status": "accepted",
+        "message": f"{len(files)} file(s) uploaded. Processing in background.",
+        "files_accepted": [f.filename for f in files],
     }
+
+
+def _run_ingestion_background(
+    saved_files: List[tuple],
+    syllabus: str,
+    user_id: str,
+    deck_id: str,
+    status_key: str,
+    temp_dir: str,
+):
+    """Background task: run the ingestion pipeline on saved files."""
+    try:
+        result: PipelineResult = ingest_files(
+            files=[path for path, _ in saved_files],
+            syllabus=syllabus,
+            user_id=user_id,
+            deck_id=deck_id,
+        )
+        _ingestion_status[status_key] = {
+            "status": "done",
+            "files_processed": result.files_processed,
+            "total_chunks": result.total_chunks,
+            "total_filtered": result.total_filtered,
+            "syllabus_topics": result.syllabus_topics,
+            "details": [
+                {
+                    "filename": r.filename,
+                    "success": r.success,
+                    "chunks": r.chunks_created,
+                    "filtered": r.chunks_filtered,
+                    "error": r.error,
+                }
+                for r in result.results
+            ],
+        }
+    except Exception as e:
+        _ingestion_status[status_key] = {
+            "status": "error",
+            "error": str(e),
+        }
+    finally:
+        # Cleanup temp files
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+@app.get("/users/{user_id}/decks/{deck_id}/ingestion-status")
+async def get_ingestion_status(user_id: str, deck_id: str):
+    """Poll the background ingestion status for a deck."""
+    status_key = f"{user_id}_{deck_id}"
+    status = _ingestion_status.get(status_key)
+    if not status:
+        return {"status": "idle"}
+    return status
 
 # ─────────────────────────────────────────────────────────────
 # Query Endpoints
