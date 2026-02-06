@@ -18,7 +18,7 @@ S-Core is a knowledge alignment engine that enforces syllabus boundaries, diagno
 - **MongoDB** (local or remote)
 - **Groq API key** — free at [console.groq.com](https://console.groq.com)
 - **Tesseract** (optional — only needed for scanned image OCR)
-- **Frontend** (optional but recommended) — see [frontend README](https://github.com/jha-priyanshu/s-core-frontend) for setup
+- **Frontend** (optional but recommended) — see [frontend README](https://github.com/jhapriyansh/s-core-frontend) for setup
 
 ---
 
