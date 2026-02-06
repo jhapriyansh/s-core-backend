@@ -1,21 +1,3 @@
-"""
-Unified Ingestion Pipeline for S-Core
-
-This pipeline runs once per deck and processes:
-1. Raw Extraction - text blocks, embedded images, standalone images
-2. Image Processing - OCR + LLM description
-3. Text Stream - all formats → semantic chunks
-4. Stream Merge - combine normal text + image-derived text
-5. Syllabus Mapping - filter by syllabus (hard boundary)
-6. Embedding & Storage - embed and store in Chroma
-
-After ingestion:
-- There are no files
-- There are no images
-- There are no formats
-- Only: semantic knowledge vectors inside syllabus scope
-"""
-
 import os
 import shutil
 from typing import List, Tuple, Optional

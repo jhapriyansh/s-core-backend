@@ -1,9 +1,3 @@
-"""
-Response Generation Module for S-Core
-Generates pace-aware responses with theory and practice.
-Now includes conversation history for follow-up questions.
-"""
-
 from typing import Optional, List, Dict
 from dataclasses import dataclass
 

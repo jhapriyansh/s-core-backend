@@ -1,9 +1,3 @@
-"""
-Embedding Module for S-Core
-Converts text to semantic vectors using ONNX Runtime (fast CPU inference).
-Replaces sentence-transformers + PyTorch for ~2-4x speed and ~1.8GB less disk.
-"""
-
 import os
 import numpy as np
 from typing import List, Union

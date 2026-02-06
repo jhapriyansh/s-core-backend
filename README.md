@@ -10,123 +10,108 @@ S-Core is a knowledge alignment engine that enforces syllabus boundaries, diagno
 - ✅ Memory, scope control, adaptive reasoning
 - ✅ Trust boundaries enforced
 
-## What S-Core Is NOT
+---
 
-- ❌ Not a chatbot
-- ❌ Not a PDF Q&A tool
-- ❌ Not a search engine
+## Prerequisites
+
+- **Python 3.10+**
+- **MongoDB** (local or remote)
+- **Groq API key** — free at [console.groq.com](https://console.groq.com)
+- **Tesseract** (optional — only needed for scanned image OCR)
+- **Frontend** (optional but recommended) — see [frontend README](https://github.com/jha-priyanshu/s-core-frontend) for setup
 
 ---
 
-## Quick Start
+## Setup
 
-### 1. Setup Virtual Environment
+### 1. Clone & Enter
 
 ```bash
-cd backend
-python -m venv venv
-source ./venv/bin/activate  # On macOS/Linux
-# or
-.\venv\Scripts\activate     # On Windows
+cd s-core/backend
 ```
 
-### 2. Install Dependencies
+### 2. Create Virtual Environment
+
+```bash
+python -m venv venv
+source venv/bin/activate   # macOS / Linux
+# or
+.\venv\Scripts\activate    # Windows
+```
+
+### 3. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Install Tesseract (for OCR)
+> First run will also download the ONNX embedding model (~90MB) to `~/.cache/score_models/`. This is a one-time download.
+
+### 4. Start MongoDB
 
 ```bash
-# macOS
-brew install tesseract
-
-# Ubuntu/Debian
-sudo apt-get install tesseract-ocr
-
-# Windows - download from: https://github.com/UB-Mannheim/tesseract/wiki
-```
-
-### 4. Setup MongoDB
-
-```bash
-# macOS
+# macOS (Homebrew)
 brew install mongodb-community
 brew services start mongodb-community
-
-# Or use Docker
-docker run -d -p 27017:27017 --name mongodb mongo:latest
 ```
 
-### 5. Configure Environment
-
-```bash
-cp .env.example .env
-# Edit .env and add your GROQ_API_KEY
-```
-
-### 6. Run Server
+### 5. Run the Server
 
 ```bash
 uvicorn main:app --reload --port 8000
 ```
 
-Visit: http://localhost:8000/docs for API documentation
-
----
-
-## Core Philosophy (System Invariants)
-
-These are non-negotiable system laws:
-
-1. **Syllabus is ground truth** - No content survives unless it maps to syllabus
-2. **No hallucination beyond scope** - Only use uploaded material
-3. **Every deck is isolated** - No cross-deck contamination
-4. **Images become text** - No raw images stored
-5. **Internet is a patch, not memory** - External info never stored
-6. **System knows when knowledge is missing** - Explicit coverage detection
+The API is now live at **http://localhost:8000**. Docs at **http://localhost:8000/docs**.
 
 ---
 
 ## API Endpoints
 
-### Users
+### Auth
 
-- `POST /users` - Create user
-- `GET /users/{user_id}` - Get user info
+| Method | Endpoint           | Description                          |
+| ------ | ------------------ | ------------------------------------ |
+| POST   | `/users`           | Register (username, email, password) |
+| POST   | `/users/login`     | Login (email, password) → JWT token  |
+| GET    | `/users/{user_id}` | Get user info                        |
 
 ### Decks
 
-- `POST /users/{user_id}/decks` - Create study deck
-- `GET /users/{user_id}/decks` - List all decks
-- `GET /users/{user_id}/decks/{deck_id}` - Get deck info
-- `DELETE /users/{user_id}/decks/{deck_id}` - Delete deck
+| Method | Endpoint                           | Description           |
+| ------ | ---------------------------------- | --------------------- |
+| POST   | `/users/{user_id}/decks`           | Create study deck     |
+| GET    | `/users/{user_id}/decks`           | List all decks        |
+| GET    | `/users/{user_id}/decks/{deck_id}` | Get deck details      |
+| DELETE | `/users/{user_id}/decks/{deck_id}` | Delete deck + vectors |
 
 ### Upload & Ingestion
 
-- `POST /users/{user_id}/decks/{deck_id}/upload` - Upload files
+| Method | Endpoint                                            | Description                       |
+| ------ | --------------------------------------------------- | --------------------------------- |
+| POST   | `/users/{user_id}/decks/{deck_id}/upload`           | Upload files (runs in background) |
+| GET    | `/users/{user_id}/decks/{deck_id}/ingestion-status` | Poll processing status            |
 
-### Query
+### Study
 
-- `POST /users/{user_id}/decks/{deck_id}/ask` - Ask question
-- `POST /users/{user_id}/decks/{deck_id}/practice` - Generate practice
-
-### Coverage
-
-- `GET /users/{user_id}/decks/{deck_id}/coverage` - Topic coverage analysis
+| Method | Endpoint                                          | Description                  |
+| ------ | ------------------------------------------------- | ---------------------------- |
+| POST   | `/users/{user_id}/decks/{deck_id}/ask`            | Ask a question (RAG)         |
+| POST   | `/users/{user_id}/decks/{deck_id}/chat`           | Chat with context history    |
+| POST   | `/users/{user_id}/decks/{deck_id}/teach`          | Start/continue teaching mode |
+| GET    | `/users/{user_id}/decks/{deck_id}/teach/progress` | Get teaching progress        |
+| POST   | `/users/{user_id}/decks/{deck_id}/practice`       | Generate practice questions  |
+| GET    | `/users/{user_id}/decks/{deck_id}/coverage`       | Topic coverage analysis      |
 
 ---
 
 ## File Support
 
-| Format     | Extension         | Notes                   |
-| ---------- | ----------------- | ----------------------- |
-| PDF        | .pdf              | Text + images extracted |
-| Word       | .docx, .doc       | Text + images extracted |
-| PowerPoint | .pptx, .ppt       | Text + images extracted |
-| Plain Text | .txt, .md         | Direct text             |
-| Images     | .png, .jpg, .jpeg | OCR + LLM description   |
+| Format     | Extensions        | Notes                    |
+| ---------- | ----------------- | ------------------------ |
+| PDF        | .pdf              | Text + embedded images   |
+| Word       | .docx             | Text + embedded images   |
+| PowerPoint | .pptx             | Text + embedded images   |
+| Images     | .png, .jpg, .jpeg | OCR (requires Tesseract) |
 
 ---
 
@@ -144,80 +129,61 @@ These are non-negotiable system laws:
 
 ```
 backend/
-├── main.py              # FastAPI application
-├── config.py            # Configuration
-├── requirements.txt     # Dependencies
+├── main.py              # FastAPI app + all endpoints
+├── config.py            # Environment & model config
+├── auth.py              # JWT + bcrypt authentication
+├── requirements.txt     # Python dependencies
+├── .env.example         # Environment template
 │
 ├── db/
-│   ├── chroma.py        # Vector storage (ChromaDB)
-│   └── mongo.py         # Document storage (MongoDB)
+│   ├── chroma.py        # ChromaDB vector storage (per-deck isolation)
+│   └── mongo.py         # MongoDB (users, decks, logs)
 │
 ├── ingestion/
-│   ├── pipeline.py      # Main ingestion pipeline
-│   ├── extract.py       # File extraction
+│   ├── pipeline.py      # Main ingestion pipeline (background processing)
+│   ├── extract.py       # PDF/DOCX/PPTX text extraction
 │   ├── chunk.py         # Semantic chunking
-│   ├── image_to_text.py # Image processing
-│   ├── syllabus_map.py  # Syllabus filtering
-│   └── embed.py         # Text embeddings
+│   ├── embed.py         # ONNX Runtime embeddings (all-MiniLM-L6-v2)
+│   ├── image_to_text.py # OCR + image description
+│   └── syllabus_map.py  # Syllabus topic parsing & filtering
 │
 └── runtime/
     ├── classify.py      # Intent classification
-    ├── retrieve.py      # Semantic retrieval
-    ├── respond.py       # Response generation
-    ├── coverage.py      # Coverage detection
-    ├── domain.py        # Scope checking
-    ├── internet.py      # Internet enhancement
-    ├── expand.py        # Topic expansion
-    ├── pace.py          # Pace configuration
-    └── practice.py      # Question generation
+    ├── retrieve.py      # Semantic retrieval from ChromaDB
+    ├── respond.py       # LLM response generation (RAG)
+    ├── teach.py         # Teaching mode (structured lessons)
+    ├── session.py       # Session & conversation state (in-memory)
+    ├── practice.py      # Practice question generation
+    ├── coverage.py      # Topic coverage detection
+    ├── domain.py        # On-topic / off-topic guard
+    ├── internet.py      # DuckDuckGo fallback search
+    ├── expand.py        # Query expansion
+    └── pace.py          # Learning pace config
 ```
-
----
-
-## Practice Question Types
-
-1. **Conceptual** - Definitions, explanations, comparisons
-2. **Application** - Scenario analysis, tracing, classification
-3. **Numerical** - Calculations, algorithms, formulas
-
-Each question includes:
-
-- The question
-- Final answer
-- Step-by-step solution
-
----
-
-## Internet Enhancement
-
-Triggered when:
-
-- Local similarity score is low
-- Prerequisite missing
-- Topic outside syllabus
-
-Whitelisted domains:
-
-- wikipedia.org
-- geeksforgeeks.org
-- tutorialspoint.com
-
-Rules:
-
-- Never stored
-- Never embedded
-- Always labeled `[Internet Enhanced]`
 
 ---
 
 ## Tech Stack
 
-- **Framework**: FastAPI
-- **LLM**: Groq (llama-3.3-70b-versatile)
-- **Embeddings**: sentence-transformers (all-MiniLM-L6-v2)
-- **Vector DB**: ChromaDB
-- **Document DB**: MongoDB
-- **OCR**: Tesseract
+| Component   | Technology                                 |
+| ----------- | ------------------------------------------ |
+| Framework   | FastAPI                                    |
+| LLM         | Groq — Llama 3.3 70B                       |
+| Embeddings  | ONNX Runtime — all-MiniLM-L6-v2 (384 dims) |
+| Vector DB   | ChromaDB (persistent, per-deck isolation)  |
+| Document DB | MongoDB                                    |
+| Auth        | JWT (PyJWT) + bcrypt                       |
+| Doc Parsing | pdfplumber, python-docx, python-pptx       |
+| OCR         | Tesseract (optional)                       |
+| Internet    | DuckDuckGo search (fallback only)          |
+
+---
+
+## Known Limitations
+
+- **Chat sessions are in-memory** — lost on server restart. Decks, users, and vectors persist fine.
+- **Tesseract required for scanned images** — if not installed, image uploads will fail. Text-based PDFs/PPTX/DOCX work without it.
+- **Groq rate limits** — free tier allows ~30 requests/minute.
 
 ---
 

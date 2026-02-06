@@ -1,8 +1,3 @@
-"""
-Semantic Chunking Module for S-Core
-Breaks text into meaningful chunks with proper boundaries.
-"""
-
 from typing import List
 from dataclasses import dataclass
 import re

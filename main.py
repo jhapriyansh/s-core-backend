@@ -1,17 +1,3 @@
-"""
-S-Core (Score) - Syllabus-Aware AI Study Companion
-Main FastAPI Application
-
-S-Core is:
-- A knowledge alignment engine
-- NOT a chatbot
-- NOT a PDF Q&A tool  
-- NOT a search engine
-
-It enforces syllabus boundaries, diagnoses missing knowledge,
-adapts learning depth, and generates theory + practice content.
-"""
-
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional, Dict

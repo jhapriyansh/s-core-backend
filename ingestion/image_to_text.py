@@ -1,15 +1,3 @@
-"""
-Image to Text Processing Module for S-Core
-Converts all images to semantic text:
-- Diagrams → descriptions
-- Graphs → data interpretations  
-- Flowcharts → process descriptions
-- Handwritten notes → transcriptions
-- Scanned pages → OCR text
-
-No raw images are stored - only semantic text.
-"""
-
 import io
 import base64
 from typing import List, Optional

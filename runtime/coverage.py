@@ -1,10 +1,3 @@
-"""
-Coverage Check Module for S-Core
-Detects when uploaded material insufficiently covers a topic.
-
-System knows when knowledge is missing.
-"""
-
 from typing import Tuple, List
 from ingestion.embed import embed, cosine_similarity
 

@@ -1,15 +1,3 @@
-"""
-Topic Expansion Module for S-Core
-Expands topics into related subtopics for hierarchical retrieval.
-
-Example:
-    Deadlock
-    ├ Mutual Exclusion
-    ├ Critical Section
-    ├ Race Conditions
-    └ Deadlock Prevention
-"""
-
 from typing import List
 
 from groq import Groq

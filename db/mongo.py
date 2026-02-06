@@ -1,9 +1,3 @@
-"""
-MongoDB Models and Connection for S-Core
-Stores: users, decks, syllabus, metadata
-Does NOT store: embeddings, chunk content, internet data
-"""
-
 from datetime import datetime
 from typing import Optional, List
 from pymongo import MongoClient

@@ -1,8 +1,3 @@
-"""
-Authentication Module for S-Core
-JWT-based email + password authentication.
-"""
-
 from datetime import datetime, timedelta
 from typing import Optional
 

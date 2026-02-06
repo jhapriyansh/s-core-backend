@@ -1,17 +1,3 @@
-"""
-Practice Question Generator for S-Core
-Generates three types of practice questions:
-
-1. Conceptual: definitions, explanations, comparisons
-2. Application-Based: scenario analysis, tracing, classification
-3. Numerical/Quantitative: calculations, algorithms, formulas
-
-Each question includes:
-- The question
-- The final answer
-- Step-by-step solution
-"""
-
 from typing import List, Optional
 from dataclasses import dataclass
 from enum import Enum

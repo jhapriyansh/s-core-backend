@@ -1,14 +1,3 @@
-"""
-Internet Enhancement Module for S-Core
-Temporary oracle for out-of-scope or insufficient coverage.
-
-Key principle: Internet = temporary oracle, Chroma = ground truth
-- Never stored
-- Never embedded  
-- Never mixed with Chroma
-- Always labeled [Internet Enhanced]
-"""
-
 from typing import Optional, List
 from dataclasses import dataclass
 

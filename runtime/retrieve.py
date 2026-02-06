@@ -1,8 +1,3 @@
-"""
-Hierarchical Semantic Retrieval for S-Core
-Retrieves relevant documents with topic expansion.
-"""
-
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 

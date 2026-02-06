@@ -1,10 +1,3 @@
-"""
-Unified Extraction Module for S-Core
-Extracts text and images from all supported file formats:
-- PDF, DOC/DOCX, PPT/PPTX, TXT
-- Scanned documents, handwritten notes
-"""
-
 import io
 import os
 from typing import List, Tuple

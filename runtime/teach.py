@@ -1,15 +1,3 @@
-"""
-Auto-Teaching Module for S-Core
-Teaches syllabus topics in order with interactive flow.
-
-Features:
-- Follows syllabus order automatically
-- Teaches topic by topic with appropriate depth
-- Prompts user after each topic
-- Handles: next, explain more, slower, practice, example
-- Tracks progress through syllabus
-"""
-
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass
 from groq import Groq

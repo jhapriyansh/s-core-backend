@@ -1,11 +1,3 @@
-"""
-Syllabus Mapping Module for S-Core
-Maps content chunks to syllabus topics.
-Enforces: syllabus = hard boundary
-
-Core principle: No content survives unless it maps to the syllabus.
-"""
-
 from typing import List, Tuple, Optional
 from dataclasses import dataclass
 import json

@@ -1,8 +1,3 @@
-"""
-Query Classification Module for S-Core
-Classifies user intent and extracts topic information.
-"""
-
 from typing import Tuple
 from dataclasses import dataclass
 import json

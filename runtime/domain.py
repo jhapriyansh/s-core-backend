@@ -1,10 +1,3 @@
-"""
-Domain Guard Module for S-Core
-Detects when queries fall outside syllabus scope.
-
-Handles topic drift gracefully.
-"""
-
 from typing import Tuple, List
 
 from ingestion.embed import embed, cosine_similarity

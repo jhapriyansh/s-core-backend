@@ -1,12 +1,3 @@
-"""
-ChromaDB Vector Storage for S-Core
-Manages isolated vector spaces per deck.
-
-Key principle: One vector space per user per deck
-- No cross-user leakage
-- No cross-deck contamination
-"""
-
 import os
 from typing import Optional, List, Dict, Any
 import chromadb

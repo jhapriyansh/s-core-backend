@@ -1,18 +1,3 @@
-"""
-Learning Pace Module for S-Core
-Controls explanation depth and theory/practice ratio.
-
-Pace does NOT affect:
-- Ingestion
-- Embeddings  
-- Retrieval logic
-
-Pace DOES affect:
-- How Groq explains
-- How many questions are generated
-- How much detail is shown
-"""
-
 from typing import Dict, Any
 from config import PACE_CONFIG
 

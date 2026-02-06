@@ -1,14 +1,3 @@
-"""
-Session Management for S-Core
-Handles conversation memory and teaching state per deck session.
-
-Features:
-- Conversation history per user/deck session
-- Teaching progress tracking
-- Follow-up question support
-- Session state persistence
-"""
-
 import time
 import uuid
 from typing import Dict, List, Optional, Any
