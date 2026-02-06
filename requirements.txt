@@ -15,9 +15,11 @@ bcrypt>=4.1.0
 # AI & LLM
 groq>=0.4.0
 
-# Embeddings
-sentence-transformers>=2.2.0
-torch>=2.0.0
+# Embeddings (ONNX — fast CPU inference, no PyTorch needed)
+onnxruntime>=1.16.0
+tokenizers>=0.15.0
+huggingface-hub>=0.20.0
+numpy>=1.24.0
 
 # Vector Database
 chromadb>=0.4.0
